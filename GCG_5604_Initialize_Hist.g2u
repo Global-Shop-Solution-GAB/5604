@@ -1,0 +1,483 @@
+Program.Sub.ScreenSU.Start
+Gui.Form..Create
+Gui.Form..Caption("Start Date Selection")
+Gui.Form..Size(5235,3495)
+Gui.Form..MinX(0)
+Gui.Form..MinY(0)
+Gui.Form..Position(0,0)
+Gui.Form..BackColor(-2147483633)
+Gui.Form..MousePointer(0)
+Gui.Form..Event(UnLoad,Form_UnLoad)
+Gui.Form.dtpStartInvHist.Create(DatePicker)
+Gui.Form.dtpStartInvHist.Size(1935,285)
+Gui.Form.dtpStartInvHist.Position(210,510)
+Gui.Form.dtpStartInvHist.DefaultValue("01/01/2000")
+Gui.Form.lbl1.Create(Label,"Enter the oldest Inventory History Date",True,2925,255,0,195,300,True,0,"Arial",8,-2147483633,0)
+Gui.Form.cmdInitialize.Create(Button)
+Gui.Form.cmdInitialize.Size(2850,375)
+Gui.Form.cmdInitialize.Position(195,885)
+Gui.Form.cmdInitialize.Caption("Initialize Inventory History Refining")
+Gui.Form.cmdInitialize.Event(Click,cmdInitialize_Click)
+Gui.Form.lblProgress.Create(Label,"",True,4740,255,0,195,1470,True,0,"Arial",8,-2147483633,0)
+Gui.Form.proBar1.Create(ProgressBar)
+Gui.Form.proBar1.Size(4740,255)
+Gui.Form.proBar1.Position(180,1755)
+Gui.Form.proBar1.Visible(False)
+Gui.Form.proBar2.Create(ProgressBar)
+Gui.Form.proBar2.Size(4740,255)
+Gui.Form.proBar2.Position(180,2160)
+Gui.Form.proBar2.Visible(False)
+Gui.Form.lbliCnt.Create(Label,"",True,1935,255,0,180,2670,True,0,"Arial",8,-2147483633,0)
+Gui.Form.lbliRowCount.Create(Label,"",True,1560,255,0,3345,2670,True,1,"Arial",8,-2147483633,0)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+v.Global.sTransactionLog.Declare
+f.Intrinsic.Control.CallSub("Check_And_Create_Custom_Folder")
+f.Intrinsic.String.Build("{0}\Custom\5604\{1}\Transaction Log\{2}_{3}.txt",v.Caller.GlobalDir,v.Caller.CompanyCode,v.Ambient.Date.FormatYYYYMMDD,v.Ambient.Now.FormatHHNNSS,v.Global.sTransactionLog)
+Program.External.Include.Library("GCG_5604_Tables.lib",False)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'BN, Sept 6, 2019
+'This program will get inventory_hist of the last transaction of each date and save to GCG_5604_Hist_By_Date, also get next date for a particular part with a date.
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	v.Local.sRet.Declare
+	v.Local.iDays.Declare
+	
+	F.ODBC.Connection!conx.OpenCompanyConnection(3600)
+	
+	f.Intrinsic.Control.CallSub("Check_Tables")
+
+'	f.Intrinsic.Control.If(v.Caller.User,<>,"SUPERVSR")
+'		F.Intrinsic.UI.Msgbox("Only Supervsr can use this program.","Attention")
+'		f.Intrinsic.Control.ExitSub	
+'	f.Intrinsic.Control.EndIf	
+	
+	'Set the default oldest Inventory History Date
+	gui.Form.dtpStartInvHist.Value("1/1/1980")
+	
+	gui.Form..Show
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	f.Intrinsic.Control.If(v.Global.sCaller,=,"GSSMENU.EXE",or,v.Global.sCaller,=,"GABCE.EXE")
+		f.Intrinsic.UI.Msgbox(v.Local.sError)
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.CallSub("Write_GAB_Error_Log","sError",v.Local.sError)
+	f.Intrinsic.Control.CallSub("Unload")
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.Check_And_Create_Custom_Folder.Start
+f.Intrinsic.Control.Try
+	v.Local.sError.Declare
+	v.Local.bExist.Declare
+	v.Local.sFile.Declare
+	v.Local.sDir.Declare
+	
+	f.Intrinsic.String.Build("{0}\Custom",v.Caller.GlobalDir,v.Local.sDir)
+	f.Intrinsic.File.DirExists(v.Local.sDir,v.Local.bExist)
+	f.Intrinsic.Control.If(v.Local.bExist.Not)
+		f.Intrinsic.File.CreateDir(v.Local.sDir)
+	f.Intrinsic.Control.EndIf
+	
+	f.Intrinsic.String.Build("{0}\Custom\5604",v.Caller.GlobalDir,v.Local.sDir)
+	f.Intrinsic.File.DirExists(v.Local.sDir,v.Local.bExist)
+	f.Intrinsic.Control.If(v.Local.bExist.Not)
+		f.Intrinsic.File.CreateDir(v.Local.sDir)
+	f.Intrinsic.Control.EndIf
+	
+	f.Intrinsic.String.Build("{0}\Custom\5604\{1}",v.Caller.GlobalDir,v.Caller.CompanyCode,v.Local.sDir)
+	f.Intrinsic.File.DirExists(v.Local.sDir,v.Local.bExist)
+	f.Intrinsic.Control.If(v.Local.bExist.Not)
+		f.Intrinsic.File.CreateDir(v.Local.sDir)
+	f.Intrinsic.Control.EndIf	
+	
+	f.Intrinsic.String.Build("{0}\Custom\5604\{1}\Transaction Log",v.Caller.GlobalDir,v.Caller.CompanyCode,v.Local.sDir)
+	f.Intrinsic.File.DirExists(v.Local.sDir,v.Local.bExist)
+	f.Intrinsic.Control.If(v.Local.bExist.Not)
+		f.Intrinsic.File.CreateDir(v.Local.sDir)
+	f.Intrinsic.Control.EndIf	
+	
+	f.Intrinsic.String.Build("{0}\Custom\5604\{1}\GAB Error Log",v.Caller.GlobalDir,v.Caller.CompanyCode,v.Local.sDir)
+	f.Intrinsic.File.DirExists(v.Local.sDir,v.Local.bExist)
+	f.Intrinsic.Control.If(v.Local.bExist.Not)
+		f.Intrinsic.File.CreateDir(v.Local.sDir)
+	f.Intrinsic.Control.EndIf		
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: 5604 {0}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}GAB Version: {5}}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	f.Intrinsic.Control.CallSub("Write_GAB_Error_Log","sError",v.Local.sError)
+	f.Intrinsic.Control.CallSub("Unload")
+F.Intrinsic.Control.EndTry	
+Program.Sub.Check_And_Create_Custom_Folder.End
+
+Program.Sub.Unload.Start
+f.Intrinsic.Control.Try
+	v.Local.sError.Declare
+
+	F.Intrinsic.Control.If(V.ODBC.conx.State,=,1)
+		F.ODBC.Connection!conx.close
+	F.Intrinsic.Control.EndIf
+	
+	f.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}Subroutine: {2}{1}Subroutine called from:{6}{1}Error Occurred: {3}{1}Description: {4}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,v.Ambient.SubroutineCalledFrom,V.Local.sError)
+	f.Intrinsic.Control.If(v.Global.sCaller,=,"GSSMENU.EXE",or,v.Global.sCaller,=,"GABCE.EXE")
+		f.Intrinsic.UI.Msgbox(v.Local.sError)
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.CallSub("Write_GAB_Error_Log","sError",v.Local.sError)
+	F.Intrinsic.Control.End	
+F.Intrinsic.Control.EndTry
+Program.Sub.Unload.End
+
+Program.Sub.Form_UnLoad.Start
+f.Intrinsic.Control.CallSub("Unload")
+Program.Sub.Form_UnLoad.End
+
+Program.Sub.Write_GAB_Error_Log.Start
+'Parameters: sError
+f.Intrinsic.Control.Try
+	v.Local.sError.Declare
+	v.Local.sFile.Declare
+	v.Local.sContent.Declare
+	
+	f.Intrinsic.Control.If(v.Global.sCaller,=,"GSSMENU.EXE",or,v.Global.sCaller,=,"GABCE.EXE")
+		f.Intrinsic.UI.Msgbox(v.Args.sError)
+	f.Intrinsic.Control.EndIf
+	
+	'Write error log file
+	f.Intrinsic.String.Build("User: {1}{0}Terminal: {2}{0}",v.Ambient.NewLine,v.Caller.User,v.Caller.Terminal,v.Local.sContent)
+	f.Intrinsic.String.Build("{0}{1}{2}{3}",v.Local.sContent,v.Ambient.Now,v.Ambient.NewLine,v.Args.sError,v.Local.sContent)
+	f.Intrinsic.String.Build("{0}\Custom\5604\{1}\GAB Error Log\Init_{2}_{3}_{4}_{5}.txt",v.Caller.GlobalDir,v.Caller.CompanyCode,v.Caller.User,v.Caller.Terminal,v.Ambient.Date.FormatYYYYMMDD,v.Ambient.Now.FormatHHNNSS,v.Local.sFile)
+	f.Intrinsic.File.String2File(v.Local.sFile,v.Local.sContent)
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub("Unload")
+f.Intrinsic.Control.EndTry
+Program.Sub.Write_GAB_Error_Log.End
+
+Program.Sub.cmdInitialize_Click.Start
+f.Intrinsic.Control.Try
+	v.Local.sError.Declare
+	v.Local.sSQL.Declare
+	v.Local.sRet.Declare
+	v.Local.dEnd.Declare
+	v.Local.dStart.Declare
+	v.Local.dYesterday.Declare
+	v.Local.sStart.Declare
+	v.Local.sEnd.Declare
+	v.Local.dBeginOfMonth.Declare
+	v.Local.dEndOfMonth.Declare
+	v.Local.dOldestDate.Declare
+	v.Local.iCnt.Declare
+	v.Local.sHold.Declare
+	v.Local.iInner.Declare
+	v.Local.sPart.Declare
+	v.Local.sTimeStart.Declare
+	v.Local.sTimeEnd.Declare
+	v.Local.sMsg.Declare
+	
+	v.Local.sTimeStart.Set(v.Ambient.Now)
+	v.Local.iUpper.Declare
+	v.Local.dHold.Declare
+	v.Local.iYearProcess.Declare
+	v.Local.iYearPrefix.Declare
+	v.Local.iNextDate.Declare
+	v.Local.iPreviousDate.Declare
+	v.Local.sInitializeDate.Declare
+	
+	v.Local.sLocation.Declare
+	v.Local.sDateAction.Declare
+	v.Local.iYearAction.Declare
+	v.Local.iMonthAction.Declare
+	v.Local.sYearAction.Declare
+	v.Local.sMonthAction.Declare
+	
+	v.local.fOld_Onhand.Declare 
+	v.local.fOld_Inv_Cost.Declare 
+	v.local.fOld_Matl.Declare 
+	v.local.fOld_Labr.Declare 
+	v.local.fOld_Ovhd.Declare 
+	v.local.fOld_Outs.Declare 
+	v.local.fOld_Frgt.Declare 
+	v.Local.fOld_Oth.Declare 
+	
+	v.Local.sFilter.Declare
+
+	v.Local.dOldestDate.Set(v.Screen.Form!dtpStartInvHist.Value)
+	f.Intrinsic.Date.DateAdd("D",-1,v.Ambient.Date,v.Local.dYesterday)	
+	
+	v.Local.dBeginOfMonth.Set(v.Local.dOldestDate)
+	f.Intrinsic.Date.EndOfMonth(v.Local.dBeginOfMonth,v.Local.dEndOfMonth)
+	
+	F.Global.Registry.ReadValue(V.Caller.User,V.Caller.CompanyCode,"OCTSRS.NET.EXE",5604,3000,5,"",V.Local.sRet)
+	F.Intrinsic.Control.If(V.Local.sRet,=,"Initialize Date")
+		F.Global.Registry.ReadValue(V.Caller.User,V.Caller.CompanyCode,"OCTSRS.NET.EXE",5604,3000,1,"",V.Local.sInitializeDate)
+	f.Intrinsic.Control.Endif
+	f.Intrinsic.Control.If(v.Local.sInitializeDate,<>,"")
+		f.Intrinsic.UI.Msgbox("Custom Inventory History was initialized, do you want to delete and reinitialize table GCG_5604_Hist? If Yes, it will take several hours to process.","Attention",4,v.Local.sRet)
+		f.Intrinsic.Control.If(v.Local.sRet,=,7)
+			f.Intrinsic.Control.ExitSub
+		f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.EndIf
+
+	'Ask again to double check
+	f.Intrinsic.Control.If(v.Local.sRet,=,6)
+		f.Intrinsic.UI.Msgbox("Are you sure to delete table GCG_5604_Hist and reinitialize? This will take several hours depends on the size of Inventory_Hist","Attention",4,v.Local.sRet)
+			f.Intrinsic.Control.If(v.Local.sRet,=,7)
+			f.Intrinsic.Control.ExitSub
+		f.Intrinsic.Control.EndIf		
+	f.Intrinsic.Control.EndIf
+	
+	gui.Form.cmdInitialize.Enabled(False)
+
+	'Delete registry
+	f.Intrinsic.UI.InvokeWaitDialog("Delete all 5604 Registry...")
+	F.ODBC.Connection!common.OpenConnection(V.Ambient.Ccon,V.Ambient.Cuser,V.Ambient.Cpass)
+	f.Intrinsic.String.Build("Delete from GS_Registry where Reg_ID = '5604' and COMPANY = '{0}'",V.Caller.CompanyCode,V.Local.sSQL)
+	F.ODBC.Connection!common.Execute(v.Local.sSQL)
+	F.ODBC.Connection!common.Close
+
+	'Delete GCG_5604_Hist
+	f.Intrinsic.UI.ChangeWaitStatus("Delete GCG_5604_Hist, it may take several minutes depends on you GCG_5604_Hist size. Please wait...")
+	f.ODBC.Connection!conx.Execute("Delete from GCG_5604_Hist")
+	f.Intrinsic.UI.CloseWaitDialog
+	
+	'Build Date Range
+	f.Intrinsic.Control.If(v.DataTable.DateRange.Exists)
+		f.Data.DataTable.Close("DateRange")
+	f.Intrinsic.Control.EndIf
+	f.Data.DataTable.Create("DateRange",True)
+	f.Data.DataTable.AddColumn("DateRange","Start","Date")
+	f.Data.DataTable.AddColumn("DateRange","End","Date")
+	
+	gui.Form.lblProgress.Caption("Building Date Range by month...")
+	f.Intrinsic.Control.Do			
+		
+		f.Intrinsic.Control.if(v.Local.dEndOfMonth,=,v.Local.dYesterday)
+			f.Data.DataTable.AddRow("DateRange","Start",v.Local.dBeginOfMonth,"End",v.Local.dEndOfMonth)
+			f.Intrinsic.String.Build("{0} thru {1}",v.Local.dBeginOfMonth,v.Local.dEndOfMonth,v.Local.sHold)
+			gui.Form.lblProgress.Caption(v.Local.sHold)
+			f.Intrinsic.Control.ExitDo
+		f.Intrinsic.Control.ElseIf(v.Local.dEndOfMonth,>,v.Local.dYesterday)
+			f.Data.DataTable.AddRow("DateRange","Start",v.Local.dBeginOfMonth,"End",v.Local.dYesterday)
+			f.Intrinsic.String.Build("{0} thru {1}",v.Local.dBeginOfMonth,v.Local.dYesterday,v.Local.sHold)
+			gui.Form.lblProgress.Caption(v.Local.sHold)
+			f.Intrinsic.Control.ExitDo	
+		f.Intrinsic.Control.EndIf	
+		
+		f.Data.DataTable.AddRow("DateRange","Start",v.Local.dBeginOfMonth,"End",v.Local.dEndOfMonth)
+		f.Intrinsic.String.Build("{0} thru {1}",v.Local.dBeginOfMonth,v.Local.dEndOfMonth,v.Local.sHold)
+		gui.Form.lblProgress.Caption(v.Local.sHold)
+		f.Intrinsic.Date.DateAdd("M",1,v.Local.dBeginOfMonth,v.Local.dBeginOfMonth)
+		f.Intrinsic.Date.BeginningOfMonth(v.Local.dBeginOfMonth,v.Local.dBeginOfMonth)
+		f.Intrinsic.Date.EndOfMonth(v.Local.dBeginOfMonth,v.Local.dEndOfMonth)	
+	
+	f.Intrinsic.Control.Loop
+
+
+f.Data.DataTable.AddRow("DateRange","Start",v.Local.dBeginOfMonth,"End",v.Local.dEndOfMonth)
+	
+	'Turn on indicator
+	gui.Form.proBar1.Visible(True)
+	f.Intrinsic.Control.If(v.DataTable.DateRange.RowCount,>,0)
+		gui.Form.proBar1.Max(v.DataTable.DateRange.RowCount)
+	f.Intrinsic.Control.EndIf
+	
+	f.Intrinsic.Control.For(v.Local.iCnt,0,v.DataTable.DateRange.RowCount--,1)
+		gui.Form.proBar1.Value(v.Local.iCnt)
+		'Set start and end date for each month
+		v.Local.dStart.Set(v.DataTable.DateRange(v.Local.iCnt).Start!FieldValString)
+		v.Local.dEnd.Set(v.DataTable.DateRange(v.Local.iCnt).End!FieldValString)
+		v.Local.sStart.Set(v.Local.dStart.FormatYYYYMMDD)
+		v.Local.sEnd.Set(v.Local.dEnd.FormatYYYYMMDD)		
+		f.Intrinsic.Date.Year(v.Local.dStart,v.Local.iYearProcess)
+		
+		f.Intrinsic.String.Build("Processing from {0} to {1}",v.Local.dStart.FormatMM/DD/YYYY,v.Local.dEnd.FormatMM/DD/YYYY,v.Local.sHold)
+		gui.Form.lblProgress.Caption(v.Local.sHold)
+		
+		'Select data for a month, each record is the end of the day			
+		f.Intrinsic.String.Build("Select i1.Part + '-' + i1.Location + '-' + i1.Date_History as Ref, i1.Product_Line,i1.Part,i1.Location,i1.Date_Acct_Yr,i1.Date_Acct_Mo,i1.Date_History,i1.Date_Action as Date_ActionRaw,i1.Inv_Hist_Time,Convert(if(i1.Date_Action = '' or SubString(i1.Date_Action,1,2) > '12','19000101',If( SubString(i1.Date_Action,5,2) < '80','20' + Substring(i1.Date_Action,5,2) + SubString(i1.Date_Action,1,4),'19' + Substring(i1.Date_Action,5,2) + SubString(i1.Date_Action,1,4))),SQL_Integer) as Date_Action,if(i1.Date_Action = '' or SubString(i1.Date_Action,1,2) > '12','19000101' + i1.Inv_Hist_Time,If( SubString(i1.Date_Action,5,2) < '80','20' + Substring(i1.Date_Action,5,2) + SubString(i1.Date_Action,1,4) + i1.Inv_Hist_Time,'19' + Substring(i1.Date_Action,5,2) + SubString(i1.Date_Action,1,4)+  i1.Inv_Hist_Time))  as HistOrderNum1 ,Convert(0,SQL_Integer) as NextDate,i1.New_Onhand,i1.New_Inv_Cost,i1.New_Matl,i1.New_Labr,i1.New_Ovhd,i1.New_Outs,i1.New_Frgt,i1.New_Oth 	From Inventory_Hist i1  inner join (Select i2.Part,i2.Location,i2.Date_History,max(if(  i2.Date_Action = '' or SubString(i2.Date_Action,1,2) > '12','19000101' + i2.Inv_Hist_Time ,If( SubString(i2.Date_Action,5,2) < '80','20' + Substring(i2.Date_Action,5,2) + SubString(i2.Date_Action,1,4) + i2.Inv_Hist_Time,'19' + Substring(i2.Date_Action,5,2) + SubString(i2.Date_Action,1,4)+  i2.Inv_Hist_Time)))  as HistOrderNum3 from Inventory_Hist i2 where i2.Date_History between '{0}' and '{1}'   Group by i2.Part,i2.Location,i2.Date_History) i3  on i1.Part = i3.Part and i1.Location = i3.Location and i1.Date_History = i3.Date_history where i1.Date_History between '{0}' and '{1}'  and HistOrderNum1 = i3.HistOrderNum3 Order By i1.Date_History,i1.Location,i1.Part;",v.local.sStart.Right6,v.Local.sEnd.Right6,v.Local.sSQL)
+		f.Data.DataTable.CreateFromSQL("MonthData","conx",v.Local.sSQL,True)
+		f.Data.DataTable.AddColumn("MonthData","DateRefine","Long",v.Local.dYesterday.FormatYYYYMMDD)
+		
+		f.Intrinsic.Control.If(v.Local.iYearProcess,>=,1980,and,v.Local.iYearProcess,<=,1999)
+			v.Local.iYearPrefix.Set(19000000)
+			f.Data.DataTable.AddExpressionColumn("MonthData","Date_Hist","Long","19000000 + Convert([Date_History],System.Int32)")
+		f.Intrinsic.Control.Else
+			v.Local.iYearPrefix.Set(20000000)
+			f.Data.DataTable.AddExpressionColumn("MonthData","Date_Hist","Long","20000000 + Convert([Date_History],System.Int32)")
+		f.Intrinsic.Control.EndIf			
+		
+		gui.Form.proBar2.Visible(True)
+		f.Intrinsic.Control.If(v.DataTable.MonthData.RowCount,>,0)
+			gui.Form.proBar2.Max(v.DataTable.MonthData.RowCount)
+		f.Intrinsic.Control.EndIf
+		
+		f.Data.DataView.Create("MonthData","dvMonthData")
+		
+		gui.Form.lbliRowCount.Caption(v.DataTable.MonthData.RowCount)
+		f.Intrinsic.Control.For(v.Local.iInner,0,v.DataTable.MonthData.RowCount--,1)
+			gui.Form.lbliCnt.Caption(v.Local.iInner)
+			gui.Form.proBar2.Value(v.Local.iInner)
+			
+			v.Local.sPart.Set(v.DataTable.MonthData(v.Local.iInner).Part!FieldValString)
+			v.Local.sLocation.Set(v.DataTable.MonthData(v.Local.iInner).Location!FieldValString)
+			v.Local.iNextDate.Set(0)
+			
+'			v.local.fOld_Onhand.Set("0") 
+'			v.local.fOld_Inv_Cost.Set("0") 
+'			v.local.fOld_Matl.Set("0") 
+'			v.local.fOld_Labr.Set("0") 
+'			v.local.fOld_Ovhd.Set("0") 
+'			v.local.fOld_Outs.Set("0") 
+'			v.local.fOld_Frgt.Set("0") 
+'			v.Local.fOld_Oth.Set("0") 		
+			
+'			'Get Old Values of begining of the day record
+'			f.Intrinsic.String.Build("Select i1.Old_Onhand,i1.Old_Inv_Cost,i1.Old_Matl,i1.Old_Labr,i1.Old_Ovhd,i1.Old_Outs,i1.Old_Frgt,i1.Old_Oth,i1.Part,i1.Location,i1.Date_Action as Date_ActionRaw,i1.Inv_Hist_Time ,Convert(if(i1.Date_Action = '' or SubString(i1.Date_Action,1,2) > '12','19000101' ,If( SubString(i1.Date_Action,5,2) < '80','20' + Substring(i1.Date_Action,5,2) + SubString(i1.Date_Action,1,4),'19' + Substring(i1.Date_Action,5,2) + SubString(i1.Date_Action,1,4))),SQL_Integer) as Date_Action,if(i1.Date_Action = '' or SubString(i1.Date_Action,1,2) > '12','19000101' +  i1.Inv_Hist_Time ,If( SubString(i1.Date_Action,5,2) < '80','20' + Substring(i1.Date_Action,5,2) + SubString(i1.Date_Action,1,4) + i1.Inv_Hist_Time ,'19' + Substring(i1.Date_Action,5,2) + SubString(i1.Date_Action,1,4)+  i1.Inv_Hist_Time))  as HistOrderNum1 From Inventory_Hist i1  inner join (Select i2.Part,i2.Location,i2.Date_History ,Min(if(  i2.Date_Action = '' or SubString(i2.Date_Action,1,2) > '12','19000101' + i2.Inv_Hist_Time ,If( SubString(i2.Date_Action,5,2) < '80','20' + Substring(i2.Date_Action,5,2) + SubString(i2.Date_Action,1,4) + i2.Inv_Hist_Time ,'19' + Substring(i2.Date_Action,5,2) + SubString(i2.Date_Action,1,4)+  i2.Inv_Hist_Time)))  as HistOrderNum3 from Inventory_Hist i2 where i2.Part = '{0}' and i2.Location = '{1}' and i2.Date_History = '{2}'  Group by  i2.Part,i2.Location,i2.Date_History) i3  on i1.Part = i3.Part and i1.Location = i3.Location and i1.Date_History = i3.Date_history   where  i1.Part = '{0}' and i1.Location = '{1}' and  i1.Date_History = '{2}' and HistOrderNum1 = i3.HistOrderNum3;",v.Local.sPart.PSQLFriendly,v.Local.sLocation,v.DataTable.MonthData(v.Local.iInner).Date_History!FieldValString,v.Local.sSQL)
+'			f.ODBC.Connection!conx.ExecuteAndReturn(v.Local.sSQL,v.Local.sRet)
+'			f.Intrinsic.Control.If(v.Local.sRet,<>,"")
+'				f.Intrinsic.String.split(v.Local.sRet,"*!*",v.Local.sRet)
+'				v.local.fOld_Onhand.Set(v.local.sRet(0)) 
+'				v.local.fOld_Inv_Cost.Set(v.local.sRet(1)) 
+'				v.local.fOld_Matl.Set(v.local.sRet(2)) 
+'				v.local.fOld_Labr.Set(v.local.sRet(3)) 
+'				v.local.fOld_Ovhd.Set(v.local.sRet(4)) 
+'				v.local.fOld_Outs.Set(v.local.sRet(5)) 
+'				v.local.fOld_Frgt.Set(v.local.sRet(6)) 
+'				v.Local.fOld_Oth.Set(v.local.sRet(7)) 				
+'			f.Intrinsic.Control.EndIf
+			
+			'***************************FIND NEXT DATE OLD METHOD********************
+			'Find next at the end of the day (Inv_Hist_Time desc)
+			f.Intrinsic.Control.If(v.Local.iYearPrefix,=,19000000)
+				'iYear Prefix = 19000000 (from 1980 to 1999)
+				'Find next in range (1980 - 1900)
+				f.Intrinsic.String.Build("Select top 1 Date_History from inventory_hist where part = '{0}' and Location = '{1}' and date_History > '{2}' and Date_Acct_Yr <> '' and Date_Acct_Mo <> '' order by date_history asc;",v.Local.sPart.PSQLFriendly,v.Local.sLocation,v.DataTable.MonthData(v.Local.iInner).Date_History!FieldValTrim,v.Local.sSQL)					
+				f.ODBC.Connection!conx.ExecuteAndReturn(v.Local.sSQL,v.Local.sRet)
+				f.Intrinsic.Control.If(v.Local.sRet,<>,"")
+					f.Intrinsic.Math.Add(19000000,v.local.sRet,v.Local.iNextDate)
+					f.Data.DataTable.SetValue("MonthData",v.Local.iInner,"NextDate",v.local.iNextDate)
+				'If there is not in range 1980 - 1900, find next in range >= 2000
+				f.Intrinsic.Control.Else
+					f.Intrinsic.String.Build("Select top 1 Date_History from inventory_hist where part = '{0}' and Location = '{1}' and date_History >= '000101' and substring(date_history,1,2) < '80' and Date_Acct_Yr <> '' and Date_Acct_Mo <> '' order by date_history asc",v.Local.sPart.PSQLFriendly,v.Local.sLocation,v.Local.sSQL)					
+					f.ODBC.Connection!conx.ExecuteAndReturn(v.Local.sSQL,v.Local.sRet)
+					f.Intrinsic.Control.If(v.Local.sRet,<>,"")
+						f.Intrinsic.Math.Add(20000000,v.local.sRet,v.Local.iNextDate)	
+						f.Data.DataTable.SetValue("MonthData",v.Local.iInner,"NextDate",v.local.iNextDate)
+					f.Intrinsic.Control.EndIf							
+				f.Intrinsic.Control.EndIf	
+			f.Intrinsic.Control.Else
+				'iYear Prefix = 2000	
+				'Find next
+				f.Intrinsic.String.Build("Select top 1 Date_History from inventory_hist where part = '{0}' and Location = '{1}' and date_History > '{2}' and substring(date_history,1,2) < '80' and Date_Acct_Yr <> '' and Date_Acct_Mo <> '' order by date_history asc",v.Local.sPart.PSQLFriendly,v.Local.sLocation,v.DataTable.MonthData(v.Local.iInner).Date_History!FieldValTrim,v.Local.sSQL)			
+				f.ODBC.Connection!conx.ExecuteAndReturn(v.Local.sSQL,v.Local.sRet)
+				f.Intrinsic.Control.If(v.Local.sRet,<>,"")
+					f.Intrinsic.Math.Add(20000000,v.local.sRet,v.Local.iNextDate)
+					f.Data.DataTable.SetValue("MonthData",v.Local.iInner,"NextDate",v.local.iNextDate)
+				f.Intrinsic.Control.EndIf			
+			f.Intrinsic.Control.EndIf
+			
+			'*********************************END FIND NEXT DATE OLD METHOD*********************************
+			
+			
+			'****New method find next date*************************
+'			F.Intrinsic.String.Build("Part = '{0}' and Location = '{1}' and Date_Hist > {2}",v.Local.sPart.PSQLFriendly,v.Local.sLocation,v.DataTable.MonthData(v.Local.iInner).Date_Hist!FieldValString,v.Local.sFilter)
+'			f.Data.DataView.SetFilter("MonthData","dvMonthData",v.Local.sFilter)
+'			f.Data.DataView.SetSort("MonthData","dvMonthData","Date_Hist Asc")
+'			f.Intrinsic.Control.If(v.DataView.MonthData!dvMonthData.RowCount,>,0)
+'				v.Local.iNextDate.Set(v.DataView.MonthData!dvMonthData(0).Date_Hist!FieldValString)
+'			f.Intrinsic.Control.Else
+'				'Select the bunch that is refined so this is easier than old method
+'				f.Intrinsic.String.Build("Select top 1 Date_Hist from GCG_5604_Hist where part = '{0}' and Location = '{1}' and date_Hist> '{2}'  order by date_hist asc",v.Local.sPart.PSQLFriendly,v.Local.sLocation,v.DataTable.MonthData(v.Local.iInner).Date_Hist!FieldValString,v.Local.sSQL)			
+'				f.ODBC.Connection!conx.ExecuteAndReturn(v.Local.sSQL,v.Local.sRet)
+'				f.Intrinsic.Control.If(v.Local.sRet,<>,"")
+'					v.Local.iNextDate.Set(v.Local.sRet)
+'				f.Intrinsic.Control.Else
+'					v.Local.iNextDate.Set(0)
+'				f.Intrinsic.Control.EndIf
+'			f.Intrinsic.Control.EndIf
+'			f.Data.DataTable.SetValue("MonthData",v.Local.iInner,"NextDate",v.local.iNextDate)
+			'****************************************************************************************
+			
+			
+		f.Intrinsic.Control.Next(v.Local.iInner)			
+		gui.Form.proBar2.Visible(False)
+		
+		'Populate old values of the begining of the day record
+		f.Intrinsic.String.Build("Select Part + '-' + Location + '-' + Date_History as Ref,   Convert(if(Date_Action = '' or SubString(Date_Action,1,2) > '12','19000101',If( SubString(Date_Action,5,2) < '80','20' + Substring(Date_Action,5,2) + SubString(Date_Action,1,4),'19' + Substring(Date_Action,5,2) + SubString(Date_Action,1,4))),SQL_Integer) as BegDate_Action,Inv_Hist_Time as Beg_Hist_Time,if(Date_Action = '' or SubString(Date_Action,1,2) > '12','19000101' + Inv_Hist_Time,If( SubString(Date_Action,5,2) < '80','20' + Substring(Date_Action,5,2) + SubString(Date_Action,1,4) + Inv_Hist_Time,'19' + Substring(Date_Action,5,2) + SubString(Date_Action,1,4)+  Inv_Hist_Time))  as HistOrderNum1 ,Old_Onhand,Old_Inv_Cost,Old_Matl,Old_Labr,Old_Ovhd,Old_Outs,Old_Frgt,Old_Oth	From Inventory_Hist   where Date_History between '{0}' and '{1}' Order By Part,Location,Date_history,HistOrderNum1 asc;",v.local.sStart.Right6,v.Local.sEnd.Right6,v.Local.sSQL)
+		F.Data.DataTable.CreateFromSQL("OldValue", "conx",v.Local.sSQL, True)
+		f.Intrinsic.Control.CallSub("Add_Columns_Using_Dictionaries","SourceTable","OldValue","KeyColumn","Ref","ColumnList","BegDate_Action~Long~0,Beg_Hist_Time~String~,Old_Onhand~Float~0,Old_Inv_Cost~Float~0,Old_Matl~Float~0,Old_Labr~Float~0,Old_Ovhd~Float~0,Old_Outs~Float~0,Old_Frgt~Float~0,Old_Oth~Float~0","TargetTable","MonthData")
+		f.Data.DataTable.Close("OldValue")		
+			
+		f.Intrinsic.String.Build("Saving {0} records in GCG_5604_Hist. Please wait...",v.DataTable.MonthData.RowCount,v.Local.sHold)
+		gui.Form.lblProgress.Caption(v.Local.sHold)
+		f.Intrinsic.Control.If(v.DataTable.MonthData.RowCount,>,0)
+			f.Data.DataTable.SaveToDB("MonthData","conx","GCG_5604_Hist","",128,"Product_Line@!@Product_Line*!*Part@!@Part*!*Location@!@Location*!*Date_Acct_Yr@!@Date_Acct_Yr*!*Date_Acct_Mo@!@Date_Acct_Mo*!*Date_History@!@Date_History*!*Date_Hist@!@Date_Hist*!*Inv_Hist_Time@!@Inv_Hist_Time*!*NextDate@!@NextDate*!*New_Onhand@!@New_Onhand*!*New_Inv_Cost@!@New_Inv_Cost*!*New_Matl@!@New_Matl*!*New_Labr@!@New_Labr*!*New_Ovhd@!@New_Ovhd*!*New_Outs@!@New_Outs*!*New_Frgt@!@New_Frgt*!*New_Oth@!@New_Oth*!*DateRefine@!@DateRefine*!*Date_Action@!@Date_Action*!*Old_Onhand@!@Old_Onhand*!*Old_Inv_Cost@!@Old_Inv_Cost*!*Old_Matl@!@Old_Matl*!*Old_Labr@!@Old_Labr*!*Old_Ovhd@!@Old_Ovhd*!*Old_Outs@!@Old_Outs*!*Old_Frgt@!@Old_Frgt*!*Old_Oth@!@Old_Oth*!*BegDate_Action@!@BegDate_Action*!*Beg_Hist_Time@!@Beg_Hist_Time")			
+		f.Intrinsic.Control.EndIf
+
+		f.Data.DataTable.Close("MonthData")
+		
+		gui.Form.lblProgress.Caption("")		
+	
+	f.Intrinsic.Control.Next(v.Local.iCnt)		
+	gui.Form.proBar1.Visible(False)
+	
+	'Add Initialize Date to Registry
+	F.Global.Registry.AddValue(V.Caller.User,V.Caller.CompanyCode,"OCTSRS.NET.EXE",5604,3000,False,"Initialize Date",False,v.Local.dYesterday.FormatYYYYMMDD,-999.0,1/1/1980,12:00:00 AM)
+	
+	v.Local.sTimeEnd.Set(v.Ambient.Now)
+	f.Intrinsic.String.Build("Ran Initializing GCG_5604_Hist started at {0} and ended at {1}.",v.Local.sTimeStart,v.Local.sTimeEnd,v.Local.sMsg)
+	f.Intrinsic.File.String2File(v.Global.sTransactionLog,v.Local.sMsg)
+	f.Intrinsic.UI.Msgbox(v.Local.sMsg,"Complete")
+	
+	f.Intrinsic.Control.CallSub("Unload")	
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	f.Intrinsic.String.Build("{0}{1}Currently at: Begin {2} End {3} with iCounter {4} and iInner {5}",v.Local.sError,v.Ambient.NewLine,v.Local.dStart.FormatMM/DD/YYYY,v.Local.dEnd.FormatMM/DD/YYYY,v.Local.iCnt,v.Local.iInner,v.Local.sError)
+	f.Intrinsic.Control.If(v.Global.sCaller,=,"GSSMENU.EXE",or,v.Global.sCaller,=,"GABCE.EXE")
+		f.Intrinsic.UI.Msgbox(v.Local.sError)
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.CallSub("Write_GAB_Error_Log","sError",v.Local.sError)
+	f.Intrinsic.Control.CallSub("Unload")
+F.Intrinsic.Control.EndTry
+
+Program.Sub.cmdInitialize_Click.End
+
+Program.Sub.Add_Columns_Using_Dictionaries.Start
+'Parameters: SourceTable,KeyColumn,ColumnList(ColumnName~DataType~DefaultValue),TargetTable
+f.Intrinsic.Control.Try
+	v.Local.sError.Declare
+	v.Local.sColumns.Declare
+	v.Local.sDataType.Declare
+	v.Local.iCnt.Declare
+	v.Local.sHold.Declare
+	v.Local.sCol.Declare
+	v.Local.sDefaultReturn.Declare
+	
+	f.Intrinsic.String.Split(v.Args.ColumnList,",",v.Local.sColumns)
+	f.Intrinsic.Control.For(v.Local.iCnt,0,v.Local.sColumns.UBound,1)
+		f.Intrinsic.String.Split(v.Local.sColumns(v.Local.iCnt),"~",v.Local.sHold)
+		v.Local.sCol.Set(v.Local.sHold(0).Trim)
+		v.Local.sDataType.Set(v.Local.sHold(1).Trim)
+		v.Local.sDefaultReturn.set(v.Local.sHold(2).Trim)
+		f.Data.Dictionary.CreateFromDataTable(v.Local.sCol,v.Args.SourceTable,v.Args.KeyColumn,v.Local.sCol)
+		f.Data.Dictionary.SetDefaultReturn(v.Local.sCol,v.Local.sDefaultReturn)
+		f.Data.DataTable.AddColumn(v.Args.TargetTable,v.Local.sCol,v.Local.sDataType,v.Local.sDefaultReturn)
+		f.Data.DataTable.FillFromDictionary(v.Args.TargetTable,v.Local.sCol,v.Args.KeyColumn,v.Local.sCol)
+		f.Data.Dictionary.Close(v.Local.sCol)	
+	f.Intrinsic.Control.Next(v.Local.iCnt)	
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}GAB Version: {5}}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.CallSub("Write_GAB_Error_Log","sError",v.Local.sError)
+	f.Intrinsic.Control.CallSub("Unload")
+F.Intrinsic.Control.EndTry
+Program.Sub.Add_Columns_Using_Dictionaries.End
