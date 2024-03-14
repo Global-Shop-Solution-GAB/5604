@@ -1,0 +1,210 @@
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Check_Tables.Start
+f.Intrinsic.Control.Try
+	v.Local.sError.Declare	
+	v.Local.bExist.Declare
+	Function.ODBC.Connection!conx.TableExists("GCG_5604_Hist",v.Local.bExist)
+	f.Intrinsic.Control.If(v.Local.bExist.Not)
+		f.ODBC.Connection!conx.Execute("CREATE TABLE GCG_5604_Hist ( AutoID IDENTITY DEFAULT '0' CONSTRAINT UK_AutoID UNIQUE USING 0, DateRefine INTEGER DEFAULT '0',  Date_Acct_Yr CHAR(2), Date_Acct_Mo CHAR(2), Product_Line CHAR(2), Part CHAR(20), Location CHAR(2), Date_History CHAR(6), Date_Hist INTEGER DEFAULT '0', Date_Action INTEGER DEFAULT '0', Inv_Hist_Time CHAR(8),BegDate_Action INTEGER DEFAULT '0',Beg_Hist_Time CHAR(8), NextDate INTEGER DEFAULT '0', OLD_ONHAND NUMERIC(16,6) DEFAULT '0', New_Onhand NUMERIC(15,6) DEFAULT '0', OLD_INV_COST NUMERIC(16,6) DEFAULT '0', New_Inv_Cost NUMERIC(16,6) DEFAULT '0', OLD_MATL NUMERIC(16,6) DEFAULT '0', New_Matl NUMERIC(16,6) DEFAULT '0', OLD_LABR NUMERIC(16,6) DEFAULT '0', New_Labr NUMERIC(16,6) DEFAULT '0', OLD_OVHD NUMERIC(16,6) DEFAULT '0', New_Ovhd NUMERIC(16,6) DEFAULT '0', OLD_OUTS NUMERIC(16,6) DEFAULT '0', New_Outs NUMERIC(16,6) DEFAULT '0', OLD_FRGT NUMERIC(16,6) DEFAULT '0', New_Frgt NUMERIC(16,6) DEFAULT '0', OLD_OTH NUMERIC(16,6) DEFAULT '0', New_Oth NUMERIC(16,6) DEFAULT '0');")
+	f.Intrinsic.Control.Endif	
+
+	'Check table again to create Index
+	Function.ODBC.Connection!conx.TableExists("GCG_5604_Hist",v.Local.bExist)
+	f.Intrinsic.Control.If(v.Local.bExist)
+	
+		f.Intrinsic.Control.CallSub("Check_Index","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist01")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!conx.Execute("CREATE INDEX GCG_5604_Hist01 ON GCG_5604_Hist ( Part, Location, Date_Hist );")
+		f.Intrinsic.Control.EndIf
+		
+		f.Intrinsic.Control.CallSub("Check_Index","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist02")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!conx.Execute("CREATE INDEX GCG_5604_Hist02 ON GCG_5604_Hist ( Product_Line );")
+		f.Intrinsic.Control.EndIf
+		
+		f.Intrinsic.Control.CallSub("Check_Index","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist03")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!conx.Execute("CREATE INDEX GCG_5604_Hist03   ON GCG_5604_Hist ( Date_Hist );")
+		f.Intrinsic.Control.EndIf
+		
+		f.Intrinsic.Control.CallSub("Check_Index","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist04")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!conx.Execute("CREATE INDEX GCG_5604_Hist04  ON GCG_5604_Hist ( NextDate );")
+		f.Intrinsic.Control.EndIf
+		
+		f.Intrinsic.Control.CallSub("Check_Index","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist05")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!conx.Execute("CREATE INDEX GCG_5604_Hist05   ON GCG_5604_Hist ( Part );")
+		f.Intrinsic.Control.EndIf
+		
+		f.Intrinsic.Control.CallSub("Check_Index","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist06")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!conx.Execute("CREATE INDEX GCG_5604_Hist06  ON GCG_5604_Hist ( Location );")
+		f.Intrinsic.Control.EndIf	
+		
+		f.Intrinsic.Control.CallSub("Check_Index","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist07")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!conx.Execute("CREATE INDEX GCG_5604_Hist07   ON GCG_5604_Hist ( Date_History );")
+		f.Intrinsic.Control.EndIf	
+	
+		f.Intrinsic.Control.CallSub("Check_Index","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist08")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!conx.Execute("CREATE INDEX GCG_5604_Hist08  ON GCG_5604_Hist ( Date_Action );")
+		f.Intrinsic.Control.EndIf			
+
+	f.Intrinsic.Control.Endif
+
+	'Check and create index for core table
+	f.Intrinsic.Control.CallSub("Check_Index","sTable","INVENTORY_HIST","sIndex","INVENTORY_HIST_07")
+	f.Intrinsic.Control.If(v.Args.bExist,=,False)
+		f.ODBC.Connection!conx.Execute("CREATE INDEX INVENTORY_HIST_07   ON INVENTORY_HIST ( DATE_ACTION );")
+	f.Intrinsic.Control.EndIf
+	
+	f.Intrinsic.Control.CallSub("Check_Index","sTable","INVENTORY_HIST","sIndex","INVENTORY_HIST_08")
+	f.Intrinsic.Control.If(v.Args.bExist,=,False)
+		f.ODBC.Connection!conx.Execute("CREATE INDEX INVENTORY_HIST_08   ON INVENTORY_HIST ( DATE_HISTORY, CODE_TRANSACTION );")
+	f.Intrinsic.Control.EndIf	
+	
+	f.Intrinsic.Control.CallSub("Check_Index","sTable","GL_AP_DETAIL","sIndex","GL_AP_Detail_02")
+	f.Intrinsic.Control.If(v.Args.bExist,=,False)
+		f.ODBC.Connection!conx.Execute("CREATE INDEX GL_AP_Detail_02  ON GL_AP_DETAIL ( AP_CODE );")
+	f.Intrinsic.Control.EndIf	
+
+	f.Intrinsic.Control.CallSub("Check_Index","sTable","GL_AP_DETAIL","sIndex","GL_AP_Detail_03")
+	f.Intrinsic.Control.If(v.Args.bExist,=,False)
+		f.ODBC.Connection!conx.Execute("CREATE INDEX GL_AP_Detail_03   ON GL_AP_DETAIL ( POST_DATE, GL_NUMBER );")
+	f.Intrinsic.Control.EndIf	
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	f.Intrinsic.Control.CallSub("Write_GAB_Error_Log","sError",v.Local.sError)
+F.Intrinsic.Control.EndTry
+Program.Sub.Check_Tables.End
+
+Program.Sub.Check_Index.Start
+f.Intrinsic.Control.Try
+	v.Local.sError.Declare
+	v.Local.sSQL.Declare
+	v.Local.sRet.Declare
+	v.Local.bExist.Declare
+	
+	f.Intrinsic.String.Build("Select Xf$Name As TableName,F1.XE$Name As FieldName,F1.Xe$DataType as DataType FROM X$File INNER JOIN X$Field F1 On F1.XE$File = XF$ID WHERE Xf$Name = '{0}' and F1.XE$Name = '{1}'",v.Args.sTable,v.Args.sIndex,v.Local.sSQL)
+	f.ODBC.Connection!conx.ExecuteAndReturn(v.Local.sSQL,v.Local.sRet)
+	f.Intrinsic.Control.If(v.Ambient.ExecuteAndReturnEOF.Not)
+		v.Local.bExist.Set(True)
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.Variable.AddRV("bExist",v.Local.bExist)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	f.Intrinsic.Control.CallSub("Write_GAB_Error_Log","sError",v.Local.sError)
+	'if any error, assume the index exists
+	f.Intrinsic.Variable.AddRV("bExist",True)
+F.Intrinsic.Control.EndTry
+Program.Sub.Check_Index.End
+
+Program.Sub.Check_Tables_Con.Start
+f.Intrinsic.Control.Try
+	v.Local.sError.Declare	
+	v.Local.bExist.Declare
+	Function.ODBC.Connection!con.TableExists("GCG_5604_Hist",v.Local.bExist)
+	f.Intrinsic.Control.If(v.Local.bExist.Not)
+		f.ODBC.Connection!con.Execute("CREATE TABLE GCG_5604_Hist ( AutoID IDENTITY DEFAULT '0' CONSTRAINT UK_AutoID UNIQUE USING 0, DateRefine INTEGER DEFAULT '0',  Date_Acct_Yr CHAR(2), Date_Acct_Mo CHAR(2), Product_Line CHAR(2), Part CHAR(20), Location CHAR(2), Date_History CHAR(6), Date_Hist INTEGER DEFAULT '0', Date_Action INTEGER DEFAULT '0', Inv_Hist_Time CHAR(8),BegDate_Action INTEGER DEFAULT '0',Beg_Hist_Time CHAR(8), NextDate INTEGER DEFAULT '0', OLD_ONHAND NUMERIC(16,6) DEFAULT '0', New_Onhand NUMERIC(15,6) DEFAULT '0', OLD_INV_COST NUMERIC(16,6) DEFAULT '0', New_Inv_Cost NUMERIC(16,6) DEFAULT '0', OLD_MATL NUMERIC(16,6) DEFAULT '0', New_Matl NUMERIC(16,6) DEFAULT '0', OLD_LABR NUMERIC(16,6) DEFAULT '0', New_Labr NUMERIC(16,6) DEFAULT '0', OLD_OVHD NUMERIC(16,6) DEFAULT '0', New_Ovhd NUMERIC(16,6) DEFAULT '0', OLD_OUTS NUMERIC(16,6) DEFAULT '0', New_Outs NUMERIC(16,6) DEFAULT '0', OLD_FRGT NUMERIC(16,6) DEFAULT '0', New_Frgt NUMERIC(16,6) DEFAULT '0', OLD_OTH NUMERIC(16,6) DEFAULT '0', New_Oth NUMERIC(16,6) DEFAULT '0');")
+	f.Intrinsic.Control.Endif	
+
+	'Check table again to create Index
+	Function.ODBC.Connection!con.TableExists("GCG_5604_Hist",v.Local.bExist)
+	f.Intrinsic.Control.If(v.Local.bExist)
+	
+		f.Intrinsic.Control.CallSub("Check_Index_con","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist01")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!con.Execute("CREATE INDEX GCG_5604_Hist01 ON GCG_5604_Hist ( Part, Location, Date_Hist );")
+		f.Intrinsic.Control.EndIf
+		
+		f.Intrinsic.Control.CallSub("Check_Index_con","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist02")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!con.Execute("CREATE INDEX GCG_5604_Hist02 ON GCG_5604_Hist ( Product_Line );")
+		f.Intrinsic.Control.EndIf
+		
+		f.Intrinsic.Control.CallSub("Check_Index_con","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist03")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!con.Execute("CREATE INDEX GCG_5604_Hist03   ON GCG_5604_Hist ( Date_Hist );")
+		f.Intrinsic.Control.EndIf
+		
+		f.Intrinsic.Control.CallSub("Check_Index_con","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist04")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!con.Execute("CREATE INDEX GCG_5604_Hist04  ON GCG_5604_Hist ( NextDate );")
+		f.Intrinsic.Control.EndIf
+		
+		f.Intrinsic.Control.CallSub("Check_Index_con","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist05")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!con.Execute("CREATE INDEX GCG_5604_Hist05   ON GCG_5604_Hist ( Part );")
+		f.Intrinsic.Control.EndIf
+		
+		f.Intrinsic.Control.CallSub("Check_Index_con","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist06")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!con.Execute("CREATE INDEX GCG_5604_Hist06  ON GCG_5604_Hist ( Location );")
+		f.Intrinsic.Control.EndIf	
+		
+		f.Intrinsic.Control.CallSub("Check_Index_con","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist07")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!con.Execute("CREATE INDEX GCG_5604_Hist07   ON GCG_5604_Hist ( Date_History );")
+		f.Intrinsic.Control.EndIf	
+	
+		f.Intrinsic.Control.CallSub("Check_Index_con","sTable","GCG_5604_Hist","sIndex","GCG_5604_Hist08")
+		f.Intrinsic.Control.If(v.Args.bExist,=,False)
+			f.ODBC.Connection!con.Execute("CREATE INDEX GCG_5604_Hist08  ON GCG_5604_Hist ( Date_Action );")
+		f.Intrinsic.Control.EndIf			
+
+	f.Intrinsic.Control.Endif
+
+	'Check and create index for core table
+	f.Intrinsic.Control.CallSub("Check_Index_con","sTable","INVENTORY_HIST","sIndex","INVENTORY_HIST_07")
+	f.Intrinsic.Control.If(v.Args.bExist,=,False)
+		f.ODBC.Connection!con.Execute("CREATE INDEX INVENTORY_HIST_07   ON INVENTORY_HIST ( DATE_ACTION );")
+	f.Intrinsic.Control.EndIf
+	
+	f.Intrinsic.Control.CallSub("Check_Index_con","sTable","INVENTORY_HIST","sIndex","INVENTORY_HIST_08")
+	f.Intrinsic.Control.If(v.Args.bExist,=,False)
+		f.ODBC.Connection!con.Execute("CREATE INDEX INVENTORY_HIST_08   ON INVENTORY_HIST ( DATE_HISTORY, CODE_TRANSACTION );")
+	f.Intrinsic.Control.EndIf	
+	
+	f.Intrinsic.Control.CallSub("Check_Index_con","sTable","GL_AP_DETAIL","sIndex","GL_AP_Detail_02")
+	f.Intrinsic.Control.If(v.Args.bExist,=,False)
+		f.ODBC.Connection!con.Execute("CREATE INDEX GL_AP_Detail_02  ON GL_AP_DETAIL ( AP_CODE );")
+	f.Intrinsic.Control.EndIf	
+
+	f.Intrinsic.Control.CallSub("Check_Index_con","sTable","GL_AP_DETAIL","sIndex","GL_AP_Detail_03")
+	f.Intrinsic.Control.If(v.Args.bExist,=,False)
+		f.ODBC.Connection!con.Execute("CREATE INDEX GL_AP_Detail_03   ON GL_AP_DETAIL ( POST_DATE, GL_NUMBER );")
+	f.Intrinsic.Control.EndIf	
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	f.Intrinsic.Control.CallSub("Write_GAB_Error_Log","sError",v.Local.sError)
+F.Intrinsic.Control.EndTry
+Program.Sub.Check_Tables_con.End
+
+Program.Sub.Check_Index_Con.Start
+f.Intrinsic.Control.Try
+	v.Local.sError.Declare
+	v.Local.sSQL.Declare
+	v.Local.sRet.Declare
+	v.Local.bExist.Declare
+	
+	f.Intrinsic.String.Build("Select Xf$Name As TableName,F1.XE$Name As FieldName,F1.Xe$DataType as DataType FROM X$File INNER JOIN X$Field F1 On F1.XE$File = XF$ID WHERE Xf$Name = '{0}' and F1.XE$Name = '{1}'",v.Args.sTable,v.Args.sIndex,v.Local.sSQL)
+	f.ODBC.Connection!con.ExecuteAndReturn(v.Local.sSQL,v.Local.sRet)
+	f.Intrinsic.Control.If(v.Ambient.ExecuteAndReturnEOF.Not)
+		v.Local.bExist.Set(True)
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.Variable.AddRV("bExist",v.Local.bExist)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	f.Intrinsic.Control.CallSub("Write_GAB_Error_Log","sError",v.Local.sError)
+	'if any error, assume the index exists
+	f.Intrinsic.Variable.AddRV("bExist",True)
+F.Intrinsic.Control.EndTry
+Program.Sub.Check_Index.End
